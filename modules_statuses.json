@@ -1,0 +1,7 @@
+{
+    "Base": true,
+    "User": true,
+    "Auth": true,
+    "Employee": true,
+    "Media": true
+}

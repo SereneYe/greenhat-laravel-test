@@ -1,0 +1,10 @@
+@import '/vendor/filament/filament/resources/css/theme.css';
+@import '/vendor/awcodes/filament-table-repeater/resources/css/plugin.css';
+
+@config 'tailwind.config.js';
+
+.fi-sidebar-nav .fi-sidebar-group .fi-sidebar-group-label {
+    @apply font-bold;
+    color: #05445e;
+}
+
