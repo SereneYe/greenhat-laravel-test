@@ -28,3 +28,41 @@ Our Laravel application integrates several specialized libraries that form the f
 - **Laravel Data** (spatie/laravel-data) provides our Data Transfer Object (DTO) implementation. DTOs create a structured way to move data between different parts of the application while ensuring type safety and validation. This library helps us maintain clean boundaries between layers and enforce data consistency throughout the application lifecycle.
 - **Laravel Fractal** (spatie/laravel-fractal) handles our data transformations, particularly for API responses. This library standardizes how we structure and format data before sending it to clients. Fractal helps create consistent API responses, including relationships and meta information, while keeping our transformations organized and reusable.
 - **Laravel Cashier** integrates our applications with Stripe's payment processing capabilities. We implement both one-time payments and subscription-based billing models. Cashier abstracts much of the complexity involved in subscription management, handling webhooks, and processing payment-related events, while providing elegant methods for subscription creation, plan changes, and payment retries.
+
+## Challenges
+### Finding Challenges
+All assessment challenges are located in the `.challenges` directory of this repository. You'll find multiple challenge options there, each designed to evaluate different aspects of Laravel development skills.
+### Approaching Challenges
+Candidates are welcome to proceed with any approach they feel comfortable with to solve the challenges. However, please note that we assess skills based on specific categories outlined in each challenge description, including but not limited to:
+
+- Code organization and architecture
+- Adherence to Laravel best practices
+- Proper implementation of framework features
+- Code readability and documentation
+- Test coverage where applicable
+- Performance considerations
+- Security implementation
+
+### Submission Process
+When you've started a challenge:
+
+- Create a new branch with the format: `candidate_name/challenge_name`
+- Implement your solution following the challenge requirements
+- Commit your changes with clear, descriptive commit messages
+- Create a Pull Request (PR) with the title format: [CANDIDATE] Your Name - Challenge Name
+
+- In the PR description, briefly explain your approach and any considerations that influenced your implementation
+
+## Assessment Criteria
+Your submission will be evaluated based on:
+
+- Completeness of the solution (does it fulfill all requirements?)
+- Code quality and organization
+- Appropriate use of Laravel features and ecosystem components
+- Implementation of best practices
+- Attention to detail
+- Problem-solving approach
+
+Feel free to leverage any of the core libraries mentioned in the Technical Framework section that you believe would enhance your solution. This demonstrates your understanding of the Laravel ecosystem and ability to select appropriate tools for the task.
+
+Good luck with your assessment! We look forward to reviewing your work.
