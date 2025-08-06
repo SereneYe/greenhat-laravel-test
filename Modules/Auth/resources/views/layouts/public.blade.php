@@ -17,13 +17,20 @@
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
-    {{-- Vite CSS --}}
-    {{-- {{ module_vite('build-auth', 'resources/assets/sass/app.scss', storage_path('vite.hot')) }} --}}
+    <!-- Vite -->
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 
-<body>
-    @yield('content')
+<body class="font-sans antialiased bg-gray-100 min-h-screen">
+    <div class="min-h-screen flex flex-col">
+        <main class="flex-grow">
+            @if (session('success'))
+                <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4 mx-auto max-w-md mt-4" role="alert">
+                    <span class="block sm:inline">{{ session('success') }}</span>
+                </div>
+            @endif
 
-    {{-- Vite JS --}}
-    {{-- {{ module_vite('build-auth', 'resources/assets/js/app.js', storage_path('vite.hot')) }} --}}
+            @yield('content')
+        </main>
+    </div>
 </body>

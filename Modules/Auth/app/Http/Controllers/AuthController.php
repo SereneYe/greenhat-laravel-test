@@ -3,63 +3,66 @@
 namespace Modules\Auth\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
+use Modules\Auth\Actions\Auth\LoginUser;
+use Modules\Auth\Actions\Auth\RegisterUser;
+use Modules\Auth\Http\Requests\LoginRequest;
+use Modules\Auth\Http\Requests\RegisterRequest;
 
 class AuthController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Show the login form.
      */
-    public function index()
+    public function showLoginForm(): View
     {
-        return view('auth::index');
+        return view('auth::login');
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Handle a login request to the application.
      */
-    public function create()
+    public function login(LoginRequest $request): RedirectResponse
     {
-        return view('auth::create');
+        try {
+            // Call the LoginUser action
+            $response = LoginUser::run($request);
+
+            // If we get here, login was successful
+            return redirect()->intended('/')->with('success', 'Login successful');
+        } catch (\Exception $e) {
+            // If there was an error, redirect back with error message
+            return back()->withErrors([
+                'email' => 'The provided credentials do not match our records.',
+            ])->withInput($request->except('password'));
+        }
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Show the registration form.
      */
-    public function store(Request $request)
+    public function showRegisterForm(): View
     {
-        //
+        return view('auth::register');
     }
 
     /**
-     * Show the specified resource.
+     * Handle a registration request for the application.
      */
-    public function show($id)
+    public function register(RegisterRequest $request): RedirectResponse
     {
-        return view('auth::show');
-    }
+        try {
+            // Call the RegisterUser action
+            $response = RegisterUser::run($request);
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit($id)
-    {
-        return view('auth::edit');
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy($id)
-    {
-        //
+            // If we get here, registration was successful
+            return redirect()->route('login')->with('success', 'Registration successful. Please login.');
+        } catch (\Exception $e) {
+            // If there was an error, redirect back with error message
+            return back()->withErrors([
+                'email' => 'There was an error registering your account. Please try again.',
+            ])->withInput($request->except('password', 'password_confirmation'));
+        }
     }
 }
