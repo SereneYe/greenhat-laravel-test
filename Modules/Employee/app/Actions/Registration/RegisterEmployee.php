@@ -109,25 +109,18 @@ class RegisterEmployee
     private function sendConfirmationEmail($employee, string $password): void
     {
         try {
-            // Use the centralized SendEmployeeConfirmationEmail action
-            $emailSent = SendEmployeeConfirmationEmail::make()->handle($employee, $password);
+            // Direct use of queue job to send email asynchronously
+            \App\Jobs\SendEmployeeRegistrationEmailJob::dispatch($employee, $password);
 
-            if ($emailSent) {
-                Log::info('Registration confirmation email sent successfully', [
-                    'user_id' => $employee->user_id,
-                    'employee_id' => $employee->id,
-                    'email' => $employee->user->email
-                ]);
-            } else {
-                Log::warning('Registration completed but email failed to send', [
-                    'user_id' => $employee->user_id,
-                    'employee_id' => $employee->id,
-                    'email' => $employee->user->email
-                ]);
-            }
+            Log::info('Registration confirmation email queued successfully', [
+                'user_id' => $employee->user_id,
+                'employee_id' => $employee->id,
+                'email' => $employee->user->email
+            ]);
+
         } catch (\Exception $e) {
             // Don't fail the registration if email fails
-            Log::error('Registration email sending failed', [
+            Log::error('Registration email queuing failed', [
                 'user_id' => $employee->user_id,
                 'employee_id' => $employee->id,
                 'error' => $e->getMessage()

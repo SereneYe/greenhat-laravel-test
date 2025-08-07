@@ -62,25 +62,25 @@ class ResetUserPasswordWithCode
 
     public function handle(string $email, string $code, string $password): array
     {
-        // 验证验证码
+        // Validate verification code
         $this->validatePasswordResetCode($email, $code);
 
-        // 查找用户
+        // Find user
         $user = User::where('email', $email)->first();
         if (!$user) {
             throw UserException::userNotFound();
         }
 
-        // 撤销所有现有 tokens
+        // Revoke all existing tokens
         $user->tokens()->delete();
 
-        // 重置密码
+        // Reset password
         $user->changePassword($password);
 
-        // 生成新的 token
+        // Generate new token
         $token = $user->createToken('password-reset-token')->plainTextToken;
 
-        // 清除验证码缓存
+        // Clear verification code cache
         Cache::forget('verification_code_password_reset_' . md5($email));
 
         return [

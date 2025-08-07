@@ -10,9 +10,14 @@ use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 use Modules\User\Models\User;
 
-class PasswordResetCodeEmail extends Mailable
+class PasswordResetCodeEmail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
+
+    // Queue configuration
+    public $tries = 3;           // Number of retries
+    public $timeout = 120;       // Timeout in seconds
+    public $backoff = [10, 30, 60]; // Retry intervals in seconds
 
     /**
      * Create a new message instance.
@@ -22,6 +27,10 @@ class PasswordResetCodeEmail extends Mailable
         public string $verificationCode,
         public string $purpose = 'password_reset'
     ) {
+        // Set queue and delay
+        $this->onQueue('emails');
+        $this->delay(now()->addSeconds(5)); // Delay 5 seconds
+
         \Log::info('PasswordResetCodeEmail constructor called', [
             'user_id' => $this->user->id,
             'user_email' => $this->user->email,

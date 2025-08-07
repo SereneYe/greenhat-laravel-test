@@ -11,9 +11,14 @@ use Illuminate\Queue\SerializesModels;
 use Modules\User\Models\User;
 use Modules\Employee\Models\Employee;
 
-class EmployeeRegistrationEmail extends Mailable
+class EmployeeRegistrationEmail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
+
+    // Queue configuration
+    public $tries = 3;           // Number of retries
+    public $timeout = 120;       // Timeout in seconds
+    public $backoff = [10, 30, 60]; // Retry intervals in seconds
 
     /**
      * Create a new message instance.
@@ -22,7 +27,11 @@ class EmployeeRegistrationEmail extends Mailable
         public User $user,
         public Employee $employee,
         public string $generatedPassword
-    ) {}
+    ) {
+        // Set queue and delay
+        $this->onQueue('emails');
+        $this->delay(now()->addSeconds(5)); // Delay 5 seconds
+    }
 
     /**
      * Get the message envelope.
@@ -31,6 +40,11 @@ class EmployeeRegistrationEmail extends Mailable
     {
         return new Envelope(
             subject: '[Greenhat] Welcome! Your Employee Account Has Been Created',
+            tags: ['employee-registration', 'welcome'],
+            metadata: [
+                'user_id' => $this->user->id,
+                'employee_id' => $this->employee->id,
+            ]
         );
     }
 
@@ -63,5 +77,22 @@ class EmployeeRegistrationEmail extends Mailable
     public function attachments(): array
     {
         return [];
+    }
+
+    /**
+     * Handle a failed email sending attempt
+     */
+    public function failed(\Throwable $exception): void
+    {
+        \Log::error('Employee registration email failed permanently', [
+            'user_id' => $this->user->id,
+            'employee_id' => $this->employee->id,
+            'email' => $this->user->email,
+            'error' => $exception->getMessage(),
+            'attempts' => $this->attempts()
+        ]);
+
+        // Optional: Update database status or notify administrators
+        // $this->employee->update(['email_failed' => true]);
     }
 }

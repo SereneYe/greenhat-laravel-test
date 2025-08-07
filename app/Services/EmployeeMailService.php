@@ -76,7 +76,7 @@ class EmployeeMailService extends BaseMailService
     }
 
     /**
-     * Send employee registration confirmation email
+     * Send employee registration confirmation email asynchronously
      *
      * @param User $user
      * @param Employee $employee
@@ -85,20 +85,32 @@ class EmployeeMailService extends BaseMailService
      */
     public function sendRegistrationConfirmation(User $user, Employee $employee, string $generatedPassword): bool
     {
-        // Create the email instance
-        $email = new EmployeeRegistrationEmail($user, $employee, $generatedPassword);
-
-        // Send the email
-        $result = $this->send($user, $email);
-
-        // Update confirmation email sent timestamp if successful
-        if ($result) {
-            $employee->update([
-                'confirmation_email_sent_at' => now(),
+        try {
+            \Illuminate\Support\Facades\Log::info('Queuing employee registration confirmation email', [
+                'user_id' => $user->id,
+                'employee_id' => $employee->id,
+                'email' => $user->email
             ]);
-        }
 
-        return $result;
+            // Use queue job to send email asynchronously
+            \App\Jobs\SendEmployeeRegistrationEmailJob::dispatch($employee, $generatedPassword);
+
+            \Illuminate\Support\Facades\Log::info('Employee registration email queued successfully', [
+                'user_id' => $user->id,
+                'email' => $user->email
+            ]);
+
+            return true;
+
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Failed to queue employee registration email', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'error' => $e->getMessage()
+            ]);
+
+            return false;
+        }
     }
 
     /**

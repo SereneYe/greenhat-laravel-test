@@ -100,7 +100,7 @@ class PasswordResetMailService extends BaseMailService
     }
 
     /**
-     * Generate and send verification code for password reset
+     * Generate and send verification code for password reset asynchronously
      *
      * @param string $email
      * @param string $purpose
@@ -126,11 +126,27 @@ class PasswordResetMailService extends BaseMailService
             $cacheKey = 'verification_code_' . $purpose . '_' . md5($email);
             Cache::put($cacheKey, $verificationCode, now()->addMinutes(15));
 
-            // Send email with verification code
-            return $this->sendPasswordResetCode($user, $verificationCode, $purpose);
+            Log::info('Generated verification code for password reset', [
+                'email' => $email,
+                'purpose' => $purpose,
+                'code_length' => strlen($verificationCode)
+            ]);
+
+            // Use queue job to send email asynchronously
+            \App\Jobs\SendPasswordResetEmailJob::dispatch($user, $verificationCode, $purpose);
+
+            Log::info('Password reset email queued successfully', [
+                'user_id' => $user->id,
+                'email' => $email
+            ]);
+
+            return true;
 
         } catch (\Exception $e) {
-            $this->logEmailFailure('PasswordResetMailService', $email, 'verification_code', $e);
+            Log::error('Failed to queue password reset email', [
+                'email' => $email,
+                'error' => $e->getMessage()
+            ]);
             return false;
         }
     }

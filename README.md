@@ -66,3 +66,42 @@ Your submission will be evaluated based on:
 Feel free to leverage any of the core libraries mentioned in the Technical Framework section that you believe would enhance your solution. This demonstrates your understanding of the Laravel ecosystem and ability to select appropriate tools for the task.
 
 Good luck with your assessment! We look forward to reviewing your work.
+
+## 📧 Asynchronous Email Queue System Testing Guide
+
+### ⚡ Start Queue Processor
+
+#### Development Environment
+```bash
+php artisan queue:work --queue=emails,default --tries=3 --timeout=120
+``` 
+
+#### Production Environment
+```bash
+# Use Supervisor management (recommended)
+php artisan queue:work --queue=emails,default --tries=3 --timeout=120 --daemon
+``` 
+
+### 🧪 Functional Testing
+
+#### 1. Employee Registration Email Test
+```bash
+# Test via API
+curl -X POST http://localhost:8000/v1/employee-registration \
+-H "Content-Type: application/json" \
+-d '{ "firstName": "John", "lastName": "Doe", "email": "johndoe@example.com", "registrationCode": "ACME", "role": "Family Support Leader" }'
+``` 
+
+#### 2. Password Reset Email Test
+```bash
+# Test via API
+curl -X POST http://localhost:8000/v1/auth/send-verification-code \
+-H "Content-Type: application/json" \
+-d '{ "email": "test@example.com", "purpose": "password_reset" }'
+``` 
+
+#### Development Debugging
+```bash
+# Development environment debug mode
+php artisan queue:work --queue=emails,default --verbose --tries=1
+```
