@@ -30,9 +30,9 @@ class ForgotPasswordRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'email.required' => '邮箱地址是必填项',
-            'email.email' => '请输入有效的邮箱地址',
-            'email.exists' => '该邮箱地址未注册',
+            'email.required' => 'Email field must not be empty',
+            'email.email' => 'Must be a valid email format',
+            'email.exists' => 'Email not found in the database',
         ];
     }
 }

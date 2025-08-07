@@ -16,10 +16,8 @@ class RegisterUserAccount
 
     public function handle(RegisterUserData $data): array
     {
-        // 验证验证码
         $this->validateVerificationCode($data->email, $data->verificationCode);
 
-        // 创建用户
         $user = User::create([
             'first_name' => $data->firstName,
             'last_name' => $data->lastName,
@@ -28,10 +26,10 @@ class RegisterUserAccount
             'password' => Hash::make($data->password),
         ]);
 
-        // 生成 token
+        // generate token
         $token = $user->createToken('user-registration')->plainTextToken;
 
-        // 清除验证码缓存
+        // delete verification code from cache
         Cache::forget('verification_code_registration_' . md5($data->email));
 
         return [

@@ -6,12 +6,12 @@ use Modules\User\Actions\Auth\RegisterUserAccount;
 use Modules\User\Actions\Auth\SendUserVerificationCode;
 use Modules\User\Actions\Auth\ResetUserPasswordWithCode;
 
-// 用户认证
+// user authentication
 Route::post('/user/auth/login', AuthenticateUser::class);
 Route::post('/user/auth/register', RegisterUserAccount::class);
 
-// 验证码
+// verification code
 Route::post('/user/auth/send-verification-code', SendUserVerificationCode::class);
 
-// 密码重置
+// reset password
 Route::post('/user/auth/reset-password', ResetUserPasswordWithCode::class);

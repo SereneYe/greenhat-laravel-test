@@ -27,7 +27,7 @@ class UserException extends Exception
         ), $this->statusCode);
     }
 
-    // 用户认证相关异常
+    // usr authentication failed
     public static function authenticationFailed(): static
     {
         return new static('Authentication failed', 401);
@@ -38,7 +38,7 @@ class UserException extends Exception
         return new static('User not found', 404);
     }
 
-    // 注册相关异常
+    // registration failed
     public static function registrationFailed(string $reason = ''): static
     {
         $message = 'User registration failed';
@@ -48,7 +48,7 @@ class UserException extends Exception
         return new static($message, 422);
     }
 
-    // 验证码相关异常
+    // verification code related exceptions
     public static function verificationCodeRequired(): static
     {
         return new static('Verification code is required', 422);
@@ -64,7 +64,7 @@ class UserException extends Exception
         return new static('Verification code has expired', 422);
     }
 
-    // 密码重置相关异常
+    // reset password related exceptions
     public static function passwordResetFailed(string $reason = ''): static
     {
         $message = 'Password reset failed';
