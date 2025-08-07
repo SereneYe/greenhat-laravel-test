@@ -10,6 +10,7 @@ use Lorisleiva\Actions\ActionRequest;
 use Lorisleiva\Actions\Concerns\AsAction;
 use Modules\Employee\Actions\Registration\CreateEmployeeProfileAction;
 use Modules\Employee\Data\Registration\EmployeeRegistrationData;
+use Modules\Employee\Exceptions\DuplicateEmailException;
 use Modules\Employee\Exceptions\EmployeeException;
 use Modules\User\Actions\User\CreateUser;
 use Modules\User\Data\User\CreateUserData;
@@ -34,6 +35,11 @@ class RegisterEmployee
         // Validate ACME code
         if (strtoupper($data->registrationCode) !== 'ACME') {
             throw EmployeeException::invalidRegistrationCode();
+        }
+
+        // Check if email already exists
+        if (User::where('email', $data->email)->exists()) {
+            throw DuplicateEmailException::emailAlreadyExists($data->email);
         }
 
         // Generate a random password
@@ -101,11 +107,22 @@ class RegisterEmployee
     /**
      * Format the response as JSON.
      *
-     * @param  array  $result
+     * @param  mixed  $result
      * @return JsonResponse
      */
-    public function jsonResponse(array $result): JsonResponse
+    public function jsonResponse($result): JsonResponse
     {
+        // Handle DuplicateEmailException
+        if ($result instanceof DuplicateEmailException) {
+            return response()->json([
+                'message' => 'Validation failed',
+                'errors' => [
+                    'email' => ['This email has already been registered']
+                ]
+            ], 422);
+        }
+
+        // Handle successful registration
         $user = $result['user'];
         $generatedPassword = $result['generated_password'];
 

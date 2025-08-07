@@ -111,7 +111,6 @@
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         // DOM Elements
-        const requestCodeForm = document.getElementById('requestCodeForm');
         const resetPasswordSection = document.getElementById('resetPasswordSection');
         const resetPasswordForm = document.getElementById('resetPasswordForm');
         const sendCodeBtn = document.getElementById('sendCodeBtn');

@@ -150,6 +150,7 @@
         </div>
     </div>
 
+    <!-- JavaScript functionality is now handled by the modular components in resources/js/ -->
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const registrationCodeInput = document.getElementById('registrationCode');
@@ -186,56 +187,6 @@
                     codeValidationMessage.classList.add('text-red-600');
                     codeValidationMessage.textContent = 'Invalid ACME code';
                 }
-            });
-
-            // Form submission handling with AJAX
-            document.getElementById('employeeRegisterForm').addEventListener('submit', function(e) {
-                e.preventDefault();
-
-                const code = registrationCodeInput.value;
-                if (!validateAcmeCode(code)) {
-                    alert('Please enter a valid ACME code.');
-                    return;
-                }
-
-                // Get form data
-                const formData = new FormData(this);
-
-                // Submit form with fetch API
-                fetch('/v1/employee-registration', {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                        'Accept': 'application/json'
-                    },
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.message) {
-                        // Show success message
-                        const formContainer = document.getElementById('employeeRegisterForm');
-                        formContainer.innerHTML = `
-                            <div class="bg-green-50 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
-                                <strong class="font-bold">Registration successful!</strong>
-                                <p class="block sm:inline">Your account has been created. Please check the email for your login password.</p>
-                            </div>
-                            <div class="text-center">
-                                <a href="{{ route('login') }}" class="inline-block px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">
-                                    Go to Login
-                                </a>
-                            </div>
-                        `;
-                    } else if (data.errors) {
-                        // Handle validation errors
-                        const errorMessages = Object.values(data.errors).flat();
-                        alert('Registration failed: ' + errorMessages.join('\n'));
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('An error occurred during registration. Please try again.');
-                });
             });
         });
     </script>
