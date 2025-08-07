@@ -7,12 +7,14 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
-use Illuminate\Validation\ValidationException;
+use Modules\Auth\Exceptions\AuthException;
 
 class LoginRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
+     *
+     * @return bool Always returns true as anyone can attempt to login
      */
     public function authorize(): bool
     {
@@ -21,6 +23,8 @@ class LoginRequest extends FormRequest
 
     /**
      * Get the validation rules that apply to the request.
+     *
+     * @return array<string, array<int, string>> The validation rules
      */
     public function rules(): array
     {
@@ -33,23 +37,26 @@ class LoginRequest extends FormRequest
 
     /**
      * Get custom messages for validator errors.
+     *
+     * @return array<string, string> The custom error messages
      */
     public function messages(): array
     {
         return [
-            'email.required' => '邮箱地址是必填项',
-            'email.email' => '请输入有效的邮箱地址',
-            'email.string' => '邮箱地址必须是字符串',
-            'password.required' => '密码是必填项',
-            'password.string' => '密码必须是字符串',
-            'remember.boolean' => '记住我选项必须是布尔值',
+            'email.required' => 'Email address is required',
+            'email.email' => 'Please enter a valid email address',
+            'email.string' => 'Email address must be a string',
+            'password.required' => 'Password is required',
+            'password.string' => 'Password must be a string',
+            'remember.boolean' => 'Remember me option must be a boolean value',
         ];
     }
 
     /**
      * Attempt to authenticate the request's credentials.
      *
-     * @throws \Illuminate\Validation\ValidationException
+     * @throws \Modules\Auth\Exceptions\AuthException When credentials are invalid
+     * @return void
      */
     public function authenticate(): void
     {
@@ -61,9 +68,7 @@ class LoginRequest extends FormRequest
         )) {
             RateLimiter::hit($this->throttleKey());
 
-            throw ValidationException::withMessages([
-                'email' => trans('auth.failed'),
-            ]);
+            throw AuthException::invalidCredentials();
         }
 
         RateLimiter::clear($this->throttleKey());
@@ -72,7 +77,8 @@ class LoginRequest extends FormRequest
     /**
      * Ensure the login request is not rate limited.
      *
-     * @throws \Illuminate\Validation\ValidationException
+     * @throws \Modules\Auth\Exceptions\AuthException When too many login attempts
+     * @return void
      */
     public function ensureIsNotRateLimited(): void
     {
@@ -84,16 +90,13 @@ class LoginRequest extends FormRequest
 
         $seconds = RateLimiter::availableIn($this->throttleKey());
 
-        throw ValidationException::withMessages([
-            'email' => trans('auth.throttle', [
-                'seconds' => $seconds,
-                'minutes' => ceil($seconds / 60),
-            ]),
-        ]);
+        throw AuthException::tooManyLoginAttempts($seconds);
     }
 
     /**
      * Get the rate limiting throttle key for the request.
+     *
+     * @return string The throttle key
      */
     public function throttleKey(): string
     {

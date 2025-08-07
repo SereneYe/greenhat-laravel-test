@@ -19,10 +19,15 @@ class RegisterEmployee
 {
     use AsAction;
 
+    /**
+     * Handle the employee registration process
+     *
+     * @param EmployeeRegistrationData $data The employee registration data
+     * @return User The created user with generated password
+     * @throws \Exception When registration fails
+     */
     public function handle(EmployeeRegistrationData $data): User
     {
-        // Validate registration code (already done in DTO)
-
         // Generate a random password
         $password = Str::password(12);
 
@@ -56,11 +61,23 @@ class RegisterEmployee
         return $user;
     }
 
+    /**
+     * Handle the request as a controller action
+     *
+     * @param ActionRequest $request The request
+     * @return User The created user
+     */
     public function asController(ActionRequest $request): User
     {
         return $this->handle(EmployeeRegistrationData::validateAndCreate($request->all()));
     }
 
+    /**
+     * Format the response as JSON
+     *
+     * @param User $user The created user
+     * @return JsonResponse The JSON response
+     */
     public function jsonResponse(User $user): JsonResponse
     {
         // Store the generated password temporarily for the response

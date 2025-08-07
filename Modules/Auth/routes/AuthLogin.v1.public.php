@@ -1,6 +1,6 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Modules\Auth\Actions\Auth\LoginUser;
+use Modules\User\Actions\Auth\AuthenticateUser;
 
-Route::post('/api/v1/auth/login', LoginUser::class);
+Route::post('/api/v1/auth/login', AuthenticateUser::class)->name('api.v1.auth.login');

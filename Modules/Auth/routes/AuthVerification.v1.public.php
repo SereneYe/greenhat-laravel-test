@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Modules\Auth\Actions\Auth\SendVerificationCode;
+use Modules\User\Actions\Auth\SendUserVerificationCode;
 
 /*
 |--------------------------------------------------------------------------
@@ -14,5 +14,5 @@ use Modules\Auth\Actions\Auth\SendVerificationCode;
 |
 */
 
-Route::post('/auth/send-verification', SendVerificationCode::class)
-    ->name('auth.send-verification');
+Route::post('/api/v1/auth/send-verification', SendUserVerificationCode::class)
+    ->name('api.v1.auth.send-verification');
