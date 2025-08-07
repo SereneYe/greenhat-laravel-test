@@ -2,6 +2,7 @@
 
 namespace Modules\Employee\Actions\Registration;
 
+use App\Services\EmployeeMailService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -46,7 +47,7 @@ class RegisterEmployee
         $password = Str::password(12);
 
         // Create user and employee profile using transaction
-        $user = DB::transaction(function () use ($data, $password) {
+        $result = DB::transaction(function () use ($data, $password) {
             try {
                 // Create user
                 $userData = new CreateUserData(
@@ -59,18 +60,22 @@ class RegisterEmployee
                 $user = app(CreateUser::class)->handle($userData);
 
                 // Create employee record using the CreateEmployeeProfileAction
-                app(CreateEmployeeProfileAction::class)->handle($user, $data);
+                $employee = app(CreateEmployeeProfileAction::class)->handle($user, $data);
 
                 // Log successful creation
                 Log::info('Employee registration completed successfully', [
                     'email' => $data->email,
                     'user_id' => $user->id,
+                    'employee_id' => $employee->id,
                     'timestamp' => now()->toISOString()
                 ]);
 
-                Log::info("Password: {$password}");
+                return [
+                    'user' => $user,
+                    'employee' => $employee,
+                    'password' => $password
+                ];
 
-                return $user;
             } catch (\Exception $e) {
                 // Log the error and rethrow
                 Log::error('Failed to register employee', [
@@ -83,11 +88,51 @@ class RegisterEmployee
             }
         });
 
+        // Send confirmation email outside of transaction to avoid rollback issues
+        $this->sendConfirmationEmail($result['employee'], $result['password']);
+
         // Return the user with the generated password
         return [
-            'user' => $user,
-            'generated_password' => $password
+            'user' => $result['user'],
+            'employee' => $result['employee'],
+            'generated_password' => $result['password']
         ];
+    }
+
+    /**
+     * Send confirmation email to the newly registered employee
+     *
+     * @param \Modules\Employee\Models\Employee $employee
+     * @param string $password
+     * @return void
+     */
+    private function sendConfirmationEmail($employee, string $password): void
+    {
+        try {
+            // Use the centralized SendEmployeeConfirmationEmail action
+            $emailSent = SendEmployeeConfirmationEmail::make()->handle($employee, $password);
+
+            if ($emailSent) {
+                Log::info('Registration confirmation email sent successfully', [
+                    'user_id' => $employee->user_id,
+                    'employee_id' => $employee->id,
+                    'email' => $employee->user->email
+                ]);
+            } else {
+                Log::warning('Registration completed but email failed to send', [
+                    'user_id' => $employee->user_id,
+                    'employee_id' => $employee->id,
+                    'email' => $employee->user->email
+                ]);
+            }
+        } catch (\Exception $e) {
+            // Don't fail the registration if email fails
+            Log::error('Registration email sending failed', [
+                'user_id' => $employee->user_id,
+                'employee_id' => $employee->id,
+                'error' => $e->getMessage()
+            ]);
+        }
     }
 
     /**
@@ -124,6 +169,7 @@ class RegisterEmployee
 
         // Handle successful registration
         $user = $result['user'];
+        $employee = $result['employee'];
         $generatedPassword = $result['generated_password'];
 
         // Use Fractal to transform the user with employee data
@@ -131,9 +177,14 @@ class RegisterEmployee
             ->parseIncludes('employee')
             ->toArray();
 
-        // Add the message and password to the response
+        // Add registration success information
         $response['message'] = 'Employee registered successfully';
         $response['generated_password'] = $generatedPassword;
+        $response['email_status'] = $employee->confirmation_email_sent_at ? 'sent' : 'pending';
+
+        if ($employee->confirmation_email_sent_at) {
+            $response['email_sent_at'] = $employee->confirmation_email_sent_at->toISOString();
+        }
 
         return response()->json($response, 201);
     }

@@ -2,7 +2,8 @@
 
 namespace Modules\Employee\Observers;
 
-use Modules\Employee\Actions\Email\SendEmployeeConfirmationEmail;
+use Modules\Employee\Actions\Registration\SendEmployeeConfirmationEmail;
+use App\Services\EmployeeMailService;
 use Modules\Employee\Models\Employee;
 use Modules\User\Actions\User\AssignRoleToUser;
 
@@ -17,7 +18,10 @@ class EmployeeObserver
 
     public function created(Employee $model): void
     {
-        // Dispatch the job to send confirmation email
-        SendEmployeeConfirmationEmail::dispatch($model);
+        // Generate a random password for the employee
+        $password = \Illuminate\Support\Str::password(12);
+
+        // Use the SendEmployeeConfirmationEmail action to send the confirmation email
+        SendEmployeeConfirmationEmail::make()->handle($model, $password);
     }
 }

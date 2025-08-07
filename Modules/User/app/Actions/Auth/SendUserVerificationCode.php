@@ -2,6 +2,7 @@
 
 namespace Modules\User\Actions\Auth;
 
+use App\Services\PasswordResetMailService;
 use Lorisleiva\Actions\Concerns\AsAction;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
@@ -12,12 +13,12 @@ class SendUserVerificationCode
 {
     use AsAction;
 
-    private const EXPIRATION_TIME = 600; // 10 minutes
+    private const EXPIRATION_TIME = 900; // 15 minutes
     private const THROTTLE_TIME = 60; // 60 seconds
 
     public function handle(string $email, string $purpose = 'registration'): array
     {
-        // 验证邮箱格式
+        // Validate email format
         $validator = Validator::make(['email' => $email], [
             'email' => 'required|email',
         ]);
@@ -30,7 +31,7 @@ class SendUserVerificationCode
             ];
         }
 
-        // 根据目的检查用户存在性
+        // Check user existence based on purpose
         if ($purpose === 'password_reset') {
             $user = \Modules\User\Models\User::where('email', $email)->first();
             if (!$user) {
@@ -41,7 +42,7 @@ class SendUserVerificationCode
             }
         }
 
-        // 检查节流限制
+        // Check throttling
         $throttleKey = "verification_throttle_{$purpose}_" . md5($email);
         if (Cache::has($throttleKey)) {
             $timeRemaining = Cache::get($throttleKey);
@@ -52,17 +53,72 @@ class SendUserVerificationCode
             ];
         }
 
-        // 生成6位验证码
+        // Set throttling
+        Cache::put($throttleKey, self::THROTTLE_TIME, self::THROTTLE_TIME);
+
+        // For password reset, use the mail service
+        if ($purpose === 'password_reset') {
+            try {
+                Log::info('Using PasswordResetMailService for password reset', [
+                    'email' => $email,
+                    'purpose' => $purpose
+                ]);
+
+                $mailService = new PasswordResetMailService();
+                $emailSent = $mailService->generateAndSendVerificationCode($email, $purpose);
+
+                Log::info('PasswordResetMailService result', [
+                    'email' => $email,
+                    'purpose' => $purpose,
+                    'email_sent' => $emailSent
+                ]);
+
+                if (!$emailSent) {
+                    Log::warning('Failed to send verification code email', [
+                        'email' => $email,
+                        'purpose' => $purpose
+                    ]);
+
+                    return [
+                        'success' => false,
+                        'message' => 'Failed to send verification code. Please try again later.',
+                    ];
+                }
+
+                Log::info('Verification code email sent successfully', [
+                    'email' => $email,
+                    'purpose' => $purpose
+                ]);
+
+                return [
+                    'success' => true,
+                    'message' => 'Verification code sent to your email',
+                    'expires_in' => '15 minutes',
+                ];
+            } catch (\Exception $e) {
+                Log::error('Exception in password reset email sending', [
+                    'email' => $email,
+                    'purpose' => $purpose,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
+
+                return [
+                    'success' => false,
+                    'message' => 'An error occurred while sending the verification code. Please try again later.',
+                ];
+            }
+        }
+
+        // For other purposes, use the existing code generation logic
+        // Generate 6-digit verification code
         $code = str_pad((string)mt_rand(100000, 999999), 6, '0', STR_PAD_LEFT);
 
-        // 存储验证码
+        // Store verification code
         $cacheKey = "verification_code_{$purpose}_" . md5($email);
         Cache::put($cacheKey, $code, self::EXPIRATION_TIME);
 
-        // 设置节流
-        Cache::put($throttleKey, self::THROTTLE_TIME, self::THROTTLE_TIME);
-
-        // 记录日志
+        // Log for non-password-reset purposes
         Log::info("{$purpose} verification code for {$email}: {$code}");
 
         return [
@@ -78,17 +134,69 @@ class SendUserVerificationCode
             $email = request()->input('email');
             $purpose = request()->input('purpose', 'registration');
 
+            Log::info('Verification code request received via API', [
+                'email' => $email,
+                'purpose' => $purpose,
+                'ip' => request()->ip(),
+                'user_agent' => request()->userAgent(),
+                'request_method' => request()->method(),
+                'request_path' => request()->path(),
+                'request_url' => request()->fullUrl()
+            ]);
+
+            // Validate email format
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                Log::warning('Invalid email format in verification code request', [
+                    'email' => $email,
+                    'purpose' => $purpose
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid email address format.',
+                ], 422);
+            }
+
+            Log::info('Calling handle method for verification code', [
+                'email' => $email,
+                'purpose' => $purpose
+            ]);
+
             $result = $this->handle($email, $purpose);
+
+            Log::info('Handle method completed for verification code', [
+                'email' => $email,
+                'purpose' => $purpose,
+                'success' => $result['success'],
+                'message' => $result['message']
+            ]);
+
+            // For password reset, add additional information in the response
+            if ($purpose === 'password_reset' && $result['success']) {
+                $result['expires_in'] = '15 minutes';
+                $result['reset_url'] = url('/reset-password');
+
+                Log::info('Password reset verification code sent successfully', [
+                    'email' => $email,
+                    'expires_in' => '15 minutes',
+                    'reset_url' => url('/reset-password')
+                ]);
+            }
 
             return response()->json($result, $result['success'] ? 200 : 422);
         } catch (\Exception $e) {
-            Log::error('Verification code sending failed', [
+            Log::error('Unexpected exception in verification code sending', [
+                'email' => request()->input('email'),
+                'purpose' => request()->input('purpose', 'registration'),
                 'error' => $e->getMessage(),
+                'error_class' => get_class($e),
+                'trace' => $e->getTraceAsString()
             ]);
 
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to send verification code',
+                'message' => 'An unexpected error occurred while sending the verification code. Please try again later.',
+                'error' => app()->environment(['local', 'development']) ? $e->getMessage() : null
             ], 500);
         }
     }
