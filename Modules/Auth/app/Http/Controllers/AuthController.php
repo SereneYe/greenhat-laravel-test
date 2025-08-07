@@ -70,6 +70,16 @@ class AuthController extends Controller
     }
 
     /**
+     * Show the employee registration form.
+     *
+     * @return View The employee registration view
+     */
+    public function showEmployeeRegisterForm(): View
+    {
+        return view('auth::employee-register');
+    }
+
+    /**
      * Handle a registration request for the application.
      *
      * @param RegisterRequest $request The registration request

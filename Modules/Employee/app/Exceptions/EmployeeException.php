@@ -41,4 +41,9 @@ class EmployeeException extends Exception
     {
         return new static(Str::snake(__FUNCTION__), $statusCode, $info);
     }
+
+    public static function invalidRegistrationCode(): static
+    {
+        return new static('Invalid registration code. Please use the correct ACME code.', 422);
+    }
 }

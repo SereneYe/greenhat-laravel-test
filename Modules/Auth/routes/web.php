@@ -25,6 +25,9 @@ Route::group(['middleware' => 'guest'], function () {
     Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('register');
     Route::post('/register', [AuthController::class, 'register'])->name('auth.register');
 
+    // Employee Registration route
+    Route::get('/employee/register', [AuthController::class, 'showEmployeeRegisterForm'])->name('employee.register');
+
     // Password reset routes
     Route::get('/forgot-password', [PasswordResetController::class, 'create'])->name('forgot-password');
     Route::post('/forgot-password', [PasswordResetController::class, 'store'])->name('auth.forgot-password');

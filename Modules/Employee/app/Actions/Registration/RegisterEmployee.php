@@ -4,30 +4,38 @@ namespace Modules\Employee\Actions\Registration;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Lorisleiva\Actions\ActionRequest;
 use Lorisleiva\Actions\Concerns\AsAction;
+use Modules\Employee\Actions\Registration\CreateEmployeeProfileAction;
 use Modules\Employee\Data\Registration\EmployeeRegistrationData;
-use Modules\Employee\Transformers\EmployeeTransformer;
+use Modules\Employee\Exceptions\EmployeeException;
 use Modules\User\Actions\User\CreateUser;
 use Modules\User\Data\User\CreateUserData;
 use Modules\User\Models\User;
 use Modules\User\Transformers\UserTransformer;
-use Spatie\Fractal\Fractal;
 
 class RegisterEmployee
 {
     use AsAction;
 
     /**
-     * Handle the employee registration process
+     * Handle the employee registration process.
      *
-     * @param EmployeeRegistrationData $data The employee registration data
-     * @return User The created user with generated password
-     * @throws \Exception When registration fails
+     * @param  EmployeeRegistrationData  $data
+     * @return array
+     *
+     * @throws EmployeeException
+     * @throws \Exception
      */
-    public function handle(EmployeeRegistrationData $data): User
+    public function handle(EmployeeRegistrationData $data): array
     {
+        // Validate ACME code
+        if (strtoupper($data->registrationCode) !== 'ACME') {
+            throw EmployeeException::invalidRegistrationCode();
+        }
+
         // Generate a random password
         $password = Str::password(12);
 
@@ -47,41 +55,59 @@ class RegisterEmployee
                 // Create employee record using the CreateEmployeeProfileAction
                 app(CreateEmployeeProfileAction::class)->handle($user, $data);
 
+                // Log successful creation
+                Log::info('Employee registration completed successfully', [
+                    'email' => $data->email,
+                    'user_id' => $user->id,
+                    'timestamp' => now()->toISOString()
+                ]);
+
+                Log::info("Password: {$password}");
+
                 return $user;
             } catch (\Exception $e) {
                 // Log the error and rethrow
-                \Log::error('Failed to register employee: ' . $e->getMessage());
+                Log::error('Failed to register employee', [
+                    'email' => $data->email,
+                    'error' => $e->getMessage(),
+                    'exception' => get_class($e),
+                    'timestamp' => now()->toISOString()
+                ]);
                 throw $e;
             }
         });
 
         // Return the user with the generated password
-        $user->generatedPassword = $password;
-
-        return $user;
+        return [
+            'user' => $user,
+            'generated_password' => $password
+        ];
     }
 
     /**
-     * Handle the request as a controller action
+     * Handle the request as a controller action.
      *
-     * @param ActionRequest $request The request
-     * @return User The created user
+     * @param  ActionRequest  $request
+     * @return array
+     *
+     * @throws EmployeeException
+     * @throws \Exception
      */
-    public function asController(ActionRequest $request): User
+    public function asController(ActionRequest $request): array
     {
         return $this->handle(EmployeeRegistrationData::validateAndCreate($request->all()));
     }
 
     /**
-     * Format the response as JSON
+     * Format the response as JSON.
      *
-     * @param User $user The created user
-     * @return JsonResponse The JSON response
+     * @param  array  $result
+     * @return JsonResponse
      */
-    public function jsonResponse(User $user): JsonResponse
+    public function jsonResponse(array $result): JsonResponse
     {
-        // Store the generated password temporarily for the response
-        $generatedPassword = $user->generatedPassword;
+        $user = $result['user'];
+        $generatedPassword = $result['generated_password'];
 
         // Use Fractal to transform the user with employee data
         $response = fractal($user, new UserTransformer())
@@ -90,8 +116,8 @@ class RegisterEmployee
 
         // Add the message and password to the response
         $response['message'] = 'Employee registered successfully';
-        $response['password'] = $generatedPassword;
+        $response['generated_password'] = $generatedPassword;
 
-        return response()->json($response);
+        return response()->json($response, 201);
     }
 }

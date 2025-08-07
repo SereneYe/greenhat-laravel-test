@@ -18,9 +18,9 @@
     </div>
 
     <div class="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
-        <form id="resetPasswordForm" class="space-y-6" action="javascript:void(0);" method="POST">
+        <!-- Step 1: Request Code (existing) -->
+        <form id="requestCodeForm" class="space-y-6" action="javascript:void(0);" method="POST">
             @csrf
-
             <div>
                 <label for="email" class="block text-sm font-medium leading-6 text-gray-900">
                     Email address
@@ -37,23 +37,35 @@
                 @error('email')
                     <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                 @enderror
+                <div id="emailError" class="mt-2 text-sm text-red-600 hidden"></div>
             </div>
 
-            <div id="verificationCodeContainer" class="hidden">
-                <label for="code" class="block text-sm font-medium leading-6 text-gray-900">
-                    Verification code
-                </label>
-                <div class="mt-2">
-                    <input id="code" name="code" type="text" maxlength="6"
-                        placeholder="Enter 6-digit verification code"
-                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 px-3">
+            <div id="codeRequestSuccess" class="mt-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative hidden" role="alert">
+                <span class="block sm:inline">Verification code sent! Please check your email.</span>
+            </div>
+        </form>
+
+        <!-- Step 2: Reset Password (initially hidden) -->
+        <div id="resetPasswordSection" class="hidden space-y-6 mt-6">
+            <form id="resetPasswordForm" class="space-y-6" action="javascript:void(0);" method="POST">
+                @csrf
+                <input type="hidden" id="userEmail" name="email">
+
+                <div>
+                    <label for="code" class="block text-sm font-medium leading-6 text-gray-900">
+                        Verification code
+                    </label>
+                    <div class="mt-2">
+                        <input id="code" name="code" type="text" maxlength="6"
+                            placeholder="Enter 6-digit verification code" required
+                            class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 px-3">
+                    </div>
+                    <div id="codeError" class="mt-2 text-sm text-red-600 hidden"></div>
+                    @error('code')
+                        <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
                 </div>
-                @error('code')
-                    <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                @enderror
-            </div>
 
-            <div id="passwordContainer" class="hidden">
                 <div>
                     <label for="password" class="block text-sm font-medium leading-6 text-gray-900">
                         New Password
@@ -62,12 +74,13 @@
                         <input id="password" name="password" type="password" autocomplete="new-password" required
                             class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 px-3">
                     </div>
+                    <div id="passwordError" class="mt-2 text-sm text-red-600 hidden"></div>
                     @error('password')
                         <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
 
-                <div class="mt-4">
+                <div>
                     <label for="password_confirmation" class="block text-sm font-medium leading-6 text-gray-900">
                         Confirm New Password
                     </label>
@@ -75,16 +88,16 @@
                         <input id="password_confirmation" name="password_confirmation" type="password" required
                             class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 px-3">
                     </div>
+                    <div id="passwordConfirmError" class="mt-2 text-sm text-red-600 hidden"></div>
                 </div>
-            </div>
 
-            <div>
-                <button type="submit" id="resetBtn" disabled
-                    class="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed">
-                    Reset Password
-                </button>
-            </div>
-        </form>
+                <div>
+                    <button type="submit" id="resetBtn"
+                        class="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed">
+                        Reset Password
+                    </button>
+                </div>
+            </form>
 
         <p class="mt-10 text-center text-sm text-gray-500">
             Remember your password?
@@ -97,13 +110,24 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        // DOM Elements
+        const requestCodeForm = document.getElementById('requestCodeForm');
+        const resetPasswordSection = document.getElementById('resetPasswordSection');
+        const resetPasswordForm = document.getElementById('resetPasswordForm');
         const sendCodeBtn = document.getElementById('sendCodeBtn');
         const emailInput = document.getElementById('email');
-        const verificationCodeContainer = document.getElementById('verificationCodeContainer');
+        const userEmailInput = document.getElementById('userEmail');
         const codeInput = document.getElementById('code');
-        const passwordContainer = document.getElementById('passwordContainer');
+        const passwordInput = document.getElementById('password');
+        const passwordConfirmInput = document.getElementById('password_confirmation');
         const resetBtn = document.getElementById('resetBtn');
-        const resetForm = document.getElementById('resetPasswordForm');
+        const codeRequestSuccess = document.getElementById('codeRequestSuccess');
+
+        // Error message elements
+        const emailError = document.getElementById('emailError');
+        const codeError = document.getElementById('codeError');
+        const passwordError = document.getElementById('passwordError');
+        const passwordConfirmError = document.getElementById('passwordConfirmError');
 
         let countdown = 60;
         let timer = null;
@@ -130,11 +154,35 @@
             }, 1000);
         }
 
+        // Function to show error message
+        function showError(element, message) {
+            element.textContent = message;
+            element.classList.remove('hidden');
+        }
+
+        // Function to hide error message
+        function hideError(element) {
+            element.textContent = '';
+            element.classList.add('hidden');
+        }
+
+        // Function to clear all error messages
+        function clearErrors() {
+            hideError(emailError);
+            hideError(codeError);
+            hideError(passwordError);
+            hideError(passwordConfirmError);
+        }
+
+        // Function to send password reset code
         function sendPasswordResetCode() {
             const email = emailInput.value.trim();
 
+            // Clear previous errors
+            clearErrors();
+
             if (!isValidEmail(email)) {
-                alert('Please enter a valid email address');
+                showError(emailError, 'Please enter a valid email address');
                 return;
             }
 
@@ -153,31 +201,38 @@
                     purpose: 'password_reset'
                 })
             })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // Debug code display removed for production
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success message
+                    codeRequestSuccess.classList.remove('hidden');
 
-                        verificationCodeContainer.classList.remove('hidden');
-                        startCountdown();
+                    // Show reset password section
+                    resetPasswordSection.classList.remove('hidden');
 
-                        setTimeout(() => {
-                            document.getElementById('code').focus();
-                        }, 100);
+                    // Pre-fill the hidden email field
+                    userEmailInput.value = email;
 
-                    } else {
-                        // Log error and show user-friendly message
-                        alert(data.message || 'Failed to send reset code. Please try again.');
-                        sendCodeBtn.disabled = false;
-                        sendCodeBtn.textContent = 'Send Code';
-                    }
-                })
-                .catch(error => {
-                    // Handle network errors
-                    alert('Network error. Please check your connection and try again.');
+                    // Start countdown for resend button
+                    startCountdown();
+
+                    // Focus on verification code input
+                    setTimeout(() => {
+                        codeInput.focus();
+                    }, 100);
+                } else {
+                    // Show error message
+                    showError(emailError, data.message || 'Failed to send reset code. Please try again.');
                     sendCodeBtn.disabled = false;
                     sendCodeBtn.textContent = 'Send Code';
-                });
+                }
+            })
+            .catch(error => {
+                // Handle network errors
+                showError(emailError, 'Network error. Please check your connection and try again.');
+                sendCodeBtn.disabled = false;
+                sendCodeBtn.textContent = 'Send Code';
+            });
         }
 
         // Event listener for send code button
@@ -193,56 +248,70 @@
                 this.value = this.value.substring(0, 6);
             }
 
-            // Show password fields when code is complete
-            if (this.value.length === 6) {
-                passwordContainer.classList.remove('hidden');
+            // Clear code error when typing
+            hideError(codeError);
+        });
+
+        // Client-side validation for password fields
+        passwordInput.addEventListener('input', function() {
+            if (this.value.length < 8) {
+                showError(passwordError, 'Password must be at least 8 characters');
             } else {
-                passwordContainer.classList.add('hidden');
-                resetBtn.disabled = true;
+                hideError(passwordError);
+            }
+
+            // Check password confirmation match
+            if (passwordConfirmInput.value && this.value !== passwordConfirmInput.value) {
+                showError(passwordConfirmError, 'Passwords do not match');
+            } else if (passwordConfirmInput.value) {
+                hideError(passwordConfirmError);
             }
         });
 
-        // Enable reset button when all fields are filled
-        document.querySelectorAll('#passwordContainer input').forEach(input => {
-            input.addEventListener('input', validateForm);
+        // Client-side validation for password confirmation
+        passwordConfirmInput.addEventListener('input', function() {
+            if (this.value && this.value !== passwordInput.value) {
+                showError(passwordConfirmError, 'Passwords do not match');
+            } else {
+                hideError(passwordConfirmError);
+            }
         });
 
-        function validateForm() {
-            const code = codeInput.value;
-            const password = document.getElementById('password').value;
-            const passwordConfirmation = document.getElementById('password_confirmation').value;
-
-            if (code.length === 6 && password.length >= 8 && password === passwordConfirmation) {
-                resetBtn.disabled = false;
-            } else {
-                resetBtn.disabled = true;
-            }
-        }
-
-        // Handle form submission
-        resetForm.addEventListener('submit', function(e) {
+        // Handle reset password form submission
+        resetPasswordForm.addEventListener('submit', function(e) {
             e.preventDefault();
 
-            const email = emailInput.value.trim();
+            // Clear previous errors
+            clearErrors();
+
+            const email = userEmailInput.value.trim();
             const code = codeInput.value.trim();
-            const password = document.getElementById('password').value;
-            const passwordConfirmation = document.getElementById('password_confirmation').value;
+            const password = passwordInput.value;
+            const passwordConfirmation = passwordConfirmInput.value;
+
+            // Validate inputs
+            let hasErrors = false;
 
             if (!code || code.length !== 6) {
-                alert('Please enter the 6-digit verification code');
-                return;
+                showError(codeError, 'Please enter the 6-digit verification code');
+                hasErrors = true;
             }
 
             if (!password || password.length < 8) {
-                alert('Password must be at least 8 characters');
-                return;
+                showError(passwordError, 'Password must be at least 8 characters');
+                hasErrors = true;
             }
 
             if (password !== passwordConfirmation) {
-                alert('Passwords do not match');
+                showError(passwordConfirmError, 'Passwords do not match');
+                hasErrors = true;
+            }
+
+            if (hasErrors) {
                 return;
             }
 
+            // Show loading state
             resetBtn.disabled = true;
             resetBtn.textContent = 'Resetting...';
 
@@ -255,31 +324,48 @@
                 body: JSON.stringify({
                     email: email,
                     code: code,
-                    password: password
+                    password: password,
+                    password_confirmation: passwordConfirmation
                 })
             })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.token) {
-                        // Store token in session storage
-                        sessionStorage.setItem('auth_token', data.token);
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.message || 'Failed to reset password');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.token) {
+                    // Store token in session storage
+                    sessionStorage.setItem('auth_token', data.token);
 
-                        // Show success message and redirect
-                        alert('Password reset successful! Redirecting to dashboard...');
-                        window.location.href = '/dashboard';
-                    } else {
-                        // Handle reset failure
-                        alert(data.message || 'Failed to reset password. Please try again.');
-                        resetBtn.disabled = false;
-                        resetBtn.textContent = 'Reset Password';
-                    }
-                })
-                .catch(error => {
-                    // Handle network errors during password reset
-                    alert('Network error. Please check your connection and try again.');
+                    // Show success message and redirect
+                    alert('Password reset successful! Redirecting to dashboard...');
+                    window.location.href = '/dashboard';
+                } else {
+                    // Handle reset failure
+                    showError(codeError, data.message || 'Failed to reset password. Please try again.');
                     resetBtn.disabled = false;
                     resetBtn.textContent = 'Reset Password';
-                });
+                }
+            })
+            .catch(error => {
+                // Check if error is related to verification code
+                if (error.message.toLowerCase().includes('verification') ||
+                    error.message.toLowerCase().includes('code')) {
+                    showError(codeError, error.message);
+                } else if (error.message.toLowerCase().includes('password')) {
+                    showError(passwordError, error.message);
+                } else {
+                    // Generic error
+                    showError(codeError, error.message || 'Network error. Please try again.');
+                }
+
+                resetBtn.disabled = false;
+                resetBtn.textContent = 'Reset Password';
+            });
         });
     });
 </script>

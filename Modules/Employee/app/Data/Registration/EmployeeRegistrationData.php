@@ -22,13 +22,13 @@ class EmployeeRegistrationData extends Data
         #[Required]
         public string $lastName,
 
-        #[Required, Unique(User::class, 'email'), Email]
+        #[Required, Email, Unique(User::class, 'email')]
         public string $email,
 
-        #[Required, In(['ACME'])]
+        #[Required, In(['ACME', 'acme'])]
         public string $registrationCode,
 
-        #[Required, In(Employee::class, 'getRoleOptions')]
+        #[Required]
         public string $role,
 
         #[StringType, Max(255)]

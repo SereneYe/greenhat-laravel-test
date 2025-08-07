@@ -14,5 +14,5 @@ use Modules\User\Actions\Auth\SendUserVerificationCode;
 |
 */
 
-Route::post('/api/v1/auth/send-verification', SendUserVerificationCode::class)
+Route::post('/auth/send-verification', SendUserVerificationCode::class)
     ->name('api.v1.auth.send-verification');

@@ -14,7 +14,7 @@ class LogOutUser
 
     public function handle(User $user): void
     {
-        event(new LogOut('api', $user));
+        event(new Logout('api', $user));
 
         $user->tokens->each->delete();
     }
