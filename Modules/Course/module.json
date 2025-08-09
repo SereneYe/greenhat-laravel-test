@@ -1,0 +1,11 @@
+{
+    "name": "Course",
+    "alias": "course",
+    "description": "Course Management System module",
+    "keywords": ["course", "education", "learning"],
+    "priority": 100,
+    "providers": [
+        "Modules\\Course\\Providers\\CourseServiceProvider"
+    ],
+    "files": []
+}

@@ -3,5 +3,6 @@
     "User": true,
     "Auth": true,
     "Employee": true,
-    "Media": true
+    "Media": true,
+    "Course": true
 }
