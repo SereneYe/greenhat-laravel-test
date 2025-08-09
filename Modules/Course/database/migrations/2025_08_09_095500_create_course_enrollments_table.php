@@ -17,6 +17,7 @@ return new class extends Migration
             $table->foreignId('course_id')->constrained('courses')->cascadeOnDelete();
             $table->timestamp('enrolled_at')->useCurrent();
             $table->timestamp('cancelled_at')->nullable();
+            $table->text('notes')->nullable();
             $table->timestamps();
 
             // Constraints

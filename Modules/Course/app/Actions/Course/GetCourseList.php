@@ -30,9 +30,15 @@ class GetCourseList
 
         $query = Course::query();
 
-        // Apply relationship loading if specified
+        // Always eager load categories for proper API responses
+        $query->with(['categories']);
+
+        // Apply additional relationship loading if specified
         if ($filters->has('with') && is_array($filters->with)) {
-            $query->with($filters->with);
+            $additionalRelations = array_diff($filters->with, ['categories']);
+            if (!empty($additionalRelations)) {
+                $query->with($additionalRelations);
+            }
         }
 
         // Apply search filter

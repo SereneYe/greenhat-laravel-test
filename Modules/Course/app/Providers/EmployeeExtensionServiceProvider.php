@@ -21,20 +21,22 @@ class EmployeeExtensionServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Extend the Employee model with the HasCourseEnrollments trait
+        // Extend the Employee model with course-related methods using mixins
         Employee::mixin(new class {
-            use HasCourseEnrollments;
-
             public function courseEnrollments()
             {
-                return $this->hasMany(\Modules\Course\Models\CourseEnrollment::class, 'employee_id');
+                return function () {
+                    return $this->hasMany(\Modules\Course\Models\CourseEnrollment::class, 'employee_id');
+                };
             }
 
             public function courses()
             {
-                return $this->belongsToMany(\Modules\Course\Models\Course::class, 'course_enrollments', 'employee_id', 'course_id')
-                    ->withPivot('enrolled_at', 'cancelled_at')
-                    ->withTimestamps();
+                return function () {
+                    return $this->belongsToMany(\Modules\Course\Models\Course::class, 'course_enrollments', 'employee_id', 'course_id')
+                        ->withPivot('enrolled_at', 'cancelled_at')
+                        ->withTimestamps();
+                };
             }
 
             public function enrollInCourse()

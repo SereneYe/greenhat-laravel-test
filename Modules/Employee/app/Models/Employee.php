@@ -8,12 +8,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Modules\Base\Traits\CamelCasing;
+use Modules\Course\Traits\HasCourseEnrollments;
 use Modules\Employee\Database\Factories\EmployeeFactory;
 use Modules\User\Models\User;
 
 class Employee extends Model
 {
-    use CamelCasing, HasFactory;
+    use CamelCasing, HasFactory, HasCourseEnrollments;
 
     protected $guarded = [];
 

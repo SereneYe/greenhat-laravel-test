@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Modules\Course\Http\Controllers\Api\CourseCategoryController;
 use Modules\Course\Http\Controllers\Api\CourseController;
+use Modules\Course\Http\Controllers\Api\CourseEnrollmentController;
 
 Route::prefix('api/v1')->group(function () {
 
@@ -28,5 +29,11 @@ Route::prefix('api/v1')->group(function () {
         Route::post('courses', [CourseController::class, 'store']);
         Route::put('courses/{id}', [CourseController::class, 'update']);
         Route::delete('courses/{id}', [CourseController::class, 'destroy']);
+
+        // Course Enrollments
+        Route::post('courses/{courseId}/enroll', [CourseEnrollmentController::class, 'enroll']);
+        Route::delete('courses/{courseId}/enroll', [CourseEnrollmentController::class, 'unenroll']);
+        Route::get('my-enrollments', [CourseEnrollmentController::class, 'myEnrollments']);
+        Route::get('employees/{employeeId}/enrollments', [CourseEnrollmentController::class, 'employeeEnrollments']);
     });
 });

@@ -105,3 +105,226 @@ curl -X POST http://localhost:8000/v1/auth/send-verification-code \
 # Development environment debug mode
 php artisan queue:work --queue=emails,default --verbose --tries=1
 ```
+
+
+
+## 📋 Module Overview
+The Course module implements a comprehensive learning management system with the following components:
+- **Course**: Individual learning opportunities with enrollment capabilities
+- **CourseCategory**: Topic-based organization system (e.g., Technical, Leadership, Communication)
+- **CourseEnrollment**: Student enrollment tracking and management
+- **Relationships**: Many-to-many relationships between courses and categories
+
+## 🧪 Testing Framework
+### Test Structure
+- **Unit Tests**: Model behavior, factories, and business logic validation
+- **Feature Tests**: API endpoint functionality and integration testing
+- **CRUD Operations**: Complete Create, Read, Update, Delete testing
+
+### Running Tests
+#### Quick Test Operations
+# Run all Course module tests (Unit + Feature)
+php artisan test tests/Unit/Course tests/Feature/Course
+
+# Run specific test categories
+php artisan test tests/Unit/Course          # Unit tests only
+php artisan test tests/Feature/Course       # Feature tests only
+
+## 🚀 Application Setup & Development
+### Prerequisites
+``` bash
+# Install dependencies
+composer install
+yarn install
+```
+### Environment Configuration
+``` bash
+# Copy environment file
+cp .env.example .env
+
+# Generate application key
+php artisan key:generate
+
+# Run database migrations
+php artisan migrate
+```
+### Multi-Terminal Development Setup
+#### Terminal 1: Frontend Development
+``` bash
+# Start frontend asset compilation
+yarn dev
+
+```
+#### Terminal 2: Employee Dashboard Server
+``` bash
+# Start employee-facing application
+php artisan serve --port=8000
+```
+#### Terminal 3: Admin Panel Server
+``` bash
+# Start administrative interface
+php artisan serve --port=8001
+```
+#### Terminal 4: Queue Processing
+``` bash
+# Start email queue worker (development)
+php artisan queue:work --queue=emails,default --verbose --tries=1
+
+# Production queue worker
+php artisan queue:work --queue=emails,default --tries=3 --timeout=120
+```
+##  Admin User Setup
+### Create Filament Admin User
+``` bash
+# Start Laravel Tinker
+php artisan tinker
+```
+
+``` php
+# In Tinker console - Import required classes
+use Modules\User\Models\User;
+use Illuminate\Support\Facades\Hash;
+
+# Create admin user
+User::create([
+    'first_name' => 'Admin',
+    'last_name' => 'User',
+    'name' => 'Admin User',
+    'email' => 'admin@gmail.com',
+    'password' => Hash::make('12345678'),
+]);
+
+# Verify user creation
+User::where('email', 'admin@gmail.com')->first();
+
+# Exit Tinker
+exit
+```
+### Admin Panel Access
+- **URL**: `http://localhost:8001/admin`
+- **Email**: `admin@gmail.com`
+- **Password**: `12345678`
+
+## 🌱 Database Seeding
+### Course Data Seeding (Sequential Order)
+``` bash
+# Step 1: Seed course categories first (required dependency)
+php artisan db:seed --class="Modules\\Course\\Database\\Seeders\\CourseCategorySeeder"
+
+# Step 2: Seed courses with category relationships
+php artisan db:seed --class="Modules\\Course\\Database\\Seeders\\CourseSeeder"
+```
+### Alternative Seeding Methods
+``` bash
+# Run all module seeders at once
+php artisan db:seed --class="Modules\\Course\\Database\\Seeders\\DatabaseSeeder"
+
+# Fresh migration with seeding ( Destroys existing data)
+php artisan migrate:fresh --seed
+
+# Refresh Course module only
+php artisan migrate:refresh --path=Modules/Course/database/migrations
+```
+### Seeding Verification
+``` bash
+# Verify seeded data in Tinker
+php artisan tinker
+
+# Check category count
+>>> Modules\Course\Models\CourseCategory::count()
+
+# Check course count  
+>>> Modules\Course\Models\Course::count()
+
+# Verify course-category relationships
+>>> Modules\Course\Models\Course::with('categories')->first()
+>>> exit
+```
+## 🔧 Development Tools & Utilities
+### Code Quality & Testing
+``` bash
+# Run PHP CS Fixer
+vendor/bin/php-cs-fixer fix
+
+# Run PHPStan analysis
+vendor/bin/phpstan analyse
+
+# Generate test coverage report
+php artisan test --coverage-html=coverage-report
+```
+### Database Management
+``` bash
+# Check migration status
+php artisan migrate:status
+
+# Rollback last migration batch
+php artisan migrate:rollback
+
+# Check queue status
+php artisan queue:monitor
+
+# Clear application cache
+php artisan cache:clear
+php artisan config:clear
+php artisan route:clear
+```
+### Main Routes
+``` bash
+# Employee Dashboard
+http://127.0.0.1:8000/dashboard
+# Employee Registration
+http://127.0.0.1:8000/employee/register
+# Normal User Registration (Assume RBAC structure)
+http://127.0.0.1:8000/register
+# Employee Login
+http://127.0.0.1:8000/login
+# Forget Password
+http://127.0.0.1:8000/forgot-password
+# Admin Panel Access
+http://localhost:8001/admin
+
+## Future Improvements
+### Role-Based Session Isolation
+**Current State**: Single session management for all user types
+**Future Enhancement**: Implement isolated session management for different user roles
+- **Admin Sessions**: Separate session keys with elevated security protocols
+    - Enhanced session timeout (shorter duration)
+
+- **Employee Sessions**: Standard session management with course-specific permissions
+    - Role-based access control (RBAC) integration
+    - Course enrollment history tracking
+
+- **General User Sessions**: Basic session management for public access
+    - Guest session handling for non-enrolled users
+
+### Enhanced Course Enrollment System
+### Advanced Security Measures
+- **Enrollment Verification**: Multi-step enrollment confirmation process
+- **Audit Trail**: Complete enrollment history tracking with timestamps
+
+### Course Progress Tracking
+- **Learning Path Management**: Sequential course dependencies
+- **Skill Assessment**: Pre/post course knowledge evaluation
+
+### Course Media Library Integration
+- **File Upload Management**: Seamless integration with existing system `FilamentMediaLibrary`
+- **Multiple Media Types Support**:
+    - Course videos (MP4, WebM)
+    - PDF documents and reading materials
+    - Interactive presentations (PPT, PPTX)
+    - Image resources and infographics
+
+### Employee-Focused Endpoints
+While Filament provides comprehensive admin URLs, the following employee-specific endpoints will enhance the user experience:
+#### Course Discovery & Details
+``` http
+GET /api/v1/courses/{slug}
+GET /api/v1/courses/{slug}/prerequisites  
+GET /api/v1/courses/{slug}/reviews
+```
+#### Enrollment Management
+``` http
+GET /api/v1/employee/enrollments/active
+GET /api/v1/employee/enrollments/completed
+GET /api/v1/employee/enrollments/{id}/progress
+```

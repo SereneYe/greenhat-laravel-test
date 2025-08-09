@@ -41,7 +41,8 @@ class CourseServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        // Register services
+        // Register the EmployeeExtensionServiceProvider to extend Employee model with course-related methods
+        $this->app->register(EmployeeExtensionServiceProvider::class);
     }
 
     /**

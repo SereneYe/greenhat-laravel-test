@@ -28,7 +28,10 @@ class CourseController extends Controller
         $filters = CourseFiltersData::from($request->all());
         $courses = (new GetCourseList())->handle($filters);
 
-        return fractal($courses, new CourseTransformer())
+        return fractal()
+            ->collection($courses->items(), new CourseTransformer())
+            ->includeCategories()
+            ->paginateWith(new \League\Fractal\Pagination\IlluminatePaginatorAdapter($courses))
             ->serializeWith(new DataArraySerializer())
             ->toArray();
     }
