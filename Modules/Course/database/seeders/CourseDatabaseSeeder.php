@@ -15,7 +15,7 @@ class CourseDatabaseSeeder extends Seeder
         $this->call(CourseCategorySeeder::class);
 
         // Additional seeders for the Course module can be added here
-        // $this->call(CourseSeeder::class);
+        $this->call(CourseSeeder::class);
         // $this->call(CourseEnrollmentSeeder::class);
     }
 }

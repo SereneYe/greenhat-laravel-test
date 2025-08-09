@@ -47,12 +47,16 @@ class GetCourseCategory
      *
      * @param ActionRequest $request
      * @param int $id
-     * @return CourseCategory
+     * @return Fractal
      * @throws CourseCategoryNotFoundException
      */
-    public function asController(ActionRequest $request, int $id): CourseCategory
+    public function asController(ActionRequest $request, int $id): Fractal
     {
-        return $this->handle($id);
+        $category = $this->handle($id);
+
+        // Return Fractal format response
+        return fractal($category, new CourseCategoryTransformer())
+            ->serializeWith(new \League\Fractal\Serializer\DataArraySerializer());
     }
 
     /**
@@ -60,12 +64,16 @@ class GetCourseCategory
      *
      * @param ActionRequest $request
      * @param string $slug
-     * @return CourseCategory
+     * @return Fractal
      * @throws CourseCategoryNotFoundException
      */
-    public function asControllerSlug(ActionRequest $request, string $slug): CourseCategory
+    public function asControllerSlug(ActionRequest $request, string $slug): Fractal
     {
-        return $this->handle($slug, true);
+        $category = $this->handle($slug, true);
+
+        // Return Fractal format response
+        return fractal($category, new CourseCategoryTransformer())
+            ->serializeWith(new \League\Fractal\Serializer\DataArraySerializer());
     }
 
     /**

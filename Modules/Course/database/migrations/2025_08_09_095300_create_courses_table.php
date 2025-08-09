@@ -15,12 +15,12 @@ return new class extends Migration
             $table->id();
             $table->string('title');
             $table->string('slug')->unique();
-            $table->text('description');
+            $table->text('description')->nullable();
             $table->longText('content')->nullable();
             $table->string('instructor')->nullable();
             $table->integer('duration_hours')->default(1);
             $table->decimal('price', 8, 2)->default(0.00);
-            $table->enum('level', ['beginner', 'intermediate', 'advanced'])->nullable();
+            $table->enum('level', ['beginner', 'intermediate', 'advanced', 'expert'])->nullable();
             $table->foreignId('cover_media_id')->nullable()->constrained('filament_media_library')->nullOnDelete();
             $table->timestamps();
             $table->softDeletes();

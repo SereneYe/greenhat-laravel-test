@@ -54,13 +54,17 @@ class CreateCourseCategory
      * Handle the action as a controller.
      *
      * @param ActionRequest $request
-     * @return CourseCategory
+     * @return Fractal
      */
-    public function asController(ActionRequest $request): CourseCategory
+    public function asController(ActionRequest $request): Fractal
     {
-        return $this->handle(
+        $category = $this->handle(
             CreateCourseCategoryData::validateAndCreate($request->all())
         );
+
+        // Return Fractal format response
+        return fractal($category, new CourseCategoryTransformer())
+            ->serializeWith(new \League\Fractal\Serializer\DataArraySerializer());
     }
 
     /**

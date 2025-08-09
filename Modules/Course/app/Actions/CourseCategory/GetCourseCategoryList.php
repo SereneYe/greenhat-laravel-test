@@ -60,13 +60,19 @@ class GetCourseCategoryList
      * Handle the action as a controller.
      *
      * @param ActionRequest $request
-     * @return LengthAwarePaginator
+     * @return Fractal
      */
-    public function asController(ActionRequest $request): LengthAwarePaginator
+    public function asController(ActionRequest $request): Fractal
     {
-        return $this->handle(
+        $paginator = $this->handle(
             CourseCategoryFiltersData::validateAndCreate($request->all())
         );
+
+        // Return Fractal format response
+        return fractal()
+            ->collection($paginator->items(), new CourseCategoryTransformer())
+            ->paginateWith(new \League\Fractal\Pagination\IlluminatePaginatorAdapter($paginator))
+            ->serializeWith(new \League\Fractal\Serializer\DataArraySerializer());
     }
 
     /**

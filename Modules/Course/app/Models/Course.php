@@ -2,18 +2,19 @@
 
 namespace Modules\Course\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Modules\Base\Traits\CamelCasing;
+use Modules\Course\Database\Factories\CourseFactory;
 use Modules\Employee\Models\Employee;
-use Modules\Media\Models\FilamentMediaLibrary;
 
 class Course extends Model
 {
-    use CamelCasing, SoftDeletes;
+    use CamelCasing, SoftDeletes, HasFactory;
 
     protected $fillable = [
         'title',
@@ -24,7 +25,6 @@ class Course extends Model
         'duration_hours',
         'price',
         'level',
-        'cover_media_id',
     ];
 
     protected $casts = [
@@ -40,13 +40,6 @@ class Course extends Model
         return $this->belongsToMany(CourseCategory::class, 'course_course_category');
     }
 
-    /**
-     * Get the cover image for the course.
-     */
-    public function coverMedia(): BelongsTo
-    {
-        return $this->belongsTo(FilamentMediaLibrary::class, 'cover_media_id');
-    }
 
     /**
      * Get the enrollments for the course.
@@ -98,5 +91,13 @@ class Course extends Model
     public function getEnrollmentCount(): int
     {
         return $this->enrollments()->whereNull('cancelled_at')->count();
+    }
+
+    /**
+     * Create a new factory instance for the model.
+     */
+    protected static function newFactory()
+    {
+        return CourseFactory::new();
     }
 }

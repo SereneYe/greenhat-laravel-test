@@ -28,10 +28,10 @@ class DeleteCourseCategory
      *
      * @param ActionRequest $request
      * @param int $id
-     * @return bool
+     * @return JsonResponse
      * @throws CourseCategoryNotFoundException
      */
-    public function asController(ActionRequest $request, int $id): bool
+    public function asController(ActionRequest $request, int $id): JsonResponse
     {
         $category = CourseCategory::find($id);
 
@@ -39,7 +39,12 @@ class DeleteCourseCategory
             throw CourseCategoryNotFoundException::forId($id);
         }
 
-        return $this->handle($category);
+        $result = $this->handle($category);
+
+        // Return success message
+        return response()->json([
+            'message' => 'Course category deleted successfully'
+        ], 200);
     }
 
     /**

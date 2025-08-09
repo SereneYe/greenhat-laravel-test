@@ -83,10 +83,10 @@ class UpdateCourseCategory
      *
      * @param ActionRequest $request
      * @param int $id
-     * @return CourseCategory
+     * @return Fractal
      * @throws CourseCategoryNotFoundException
      */
-    public function asController(ActionRequest $request, int $id): CourseCategory
+    public function asController(ActionRequest $request, int $id): Fractal
     {
         $category = CourseCategory::find($id);
 
@@ -94,12 +94,16 @@ class UpdateCourseCategory
             throw CourseCategoryNotFoundException::forId($id);
         }
 
-        return $this->handle(
+        $category = $this->handle(
             UpdateCourseCategoryData::validateAndCreate([
                 ...$request->all(),
                 'courseCategory' => $category,
             ])
         );
+
+        // Return Fractal format response
+        return fractal($category, new CourseCategoryTransformer())
+            ->serializeWith(new \League\Fractal\Serializer\DataArraySerializer());
     }
 
     /**
